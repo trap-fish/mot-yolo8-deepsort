@@ -1,11 +1,11 @@
 import os
 import cv2
-from ultralytics import YOLO
+from ultralytics import YOLO, RTDETR
 import random
 from tracker import Tracker
 
 video_path = os.path.join('.', 'data/okutama', 'okutama-sample.mov')
-video_out_path = os.path.join('.', 'data/okutama', 'okutama-tracked.mp4')
+video_out_path = os.path.join('.', 'data/okutama', 'okutama-tracked-rt-detr.mp4')
 
 cap = cv2.VideoCapture(video_path)
 ret, frame = cap.read()
@@ -17,13 +17,17 @@ cap_out = cv2.VideoWriter(video_out_path,
                           )
 
 # define the detection model
-model = YOLO("yolov8n.pt")
+#model = YOLO("yolov8n.pt")
+model = RTDETR("rtdetr-l.pt")
 
 # initialise Tracker object
 tracker = Tracker()
 
 # define colours for bounding boxes
 colors = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for j in range(10)]
+
+# set confidence threshold for boundary box assignment
+threshold = 0.6
 
 while ret:
 
@@ -38,7 +42,9 @@ while ret:
             x2 = int(x2)
             y2 = int(y2)
             classid = int(classid)
-            detections.append([x1, y1, x2, y2, score])
+
+            if score >= threshold:
+                detections.append([x1, y1, x2, y2, score])
 
         tracker.update(frame, detections)
 
